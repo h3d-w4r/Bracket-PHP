@@ -1,0 +1,4 @@
+Things to add to next version:
+Match History
+Win/loss
+Team Icon

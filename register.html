@@ -1,0 +1,177 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN"
+   "http://www.w3.org/TR/html4/strict.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<title>register</title>
+	<meta name="author" content="Tyler" />
+	
+	<!-- Date: 2013-06-14 -->
+</head>
+<body onload="CheckAll();">
+	<script src="sha256.js"></script>
+	<script src="core.js"></script>
+	<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+	<!--TO DO:
+	-->
+	<script type="text/javascript">
+		var Username = false;
+		var Email = false;
+		var Pass = false;
+		var Question = false;
+		var Answer = false;
+		var letters = /^[0-9a-zA-Z\s]+$/; 
+		
+		function CheckAll(){
+			checkUser();
+			CheckPassword();
+			CheckEmail();
+			CheckInfo();
+		}
+		
+		function checkUser(){
+			if(document.info.Username.value.length<=0){
+				Username = false;
+				document.getElementById('uname').innerHTML = "This field can't be left blank";
+			}
+			else if(!document.info.Username.value.match(letters)){
+				Username = false;
+				document.getElementById('uname').innerHTML = "Please use alphanumeric characters, and spaces only.";
+			}
+			else{
+				document.getElementById('uname').innerHTML = "";
+				//Variable for the currently entered username
+				var uname = document.info.Username.value;
+				
+				//AJAX call, which returns what is echoed from the PHP script
+				var avail = $.ajax({
+					url: "check_user.php?username=" + uname + "&email=f",
+					async: false,
+					type: 'get'
+				}).responseText;
+							
+				//If the name isn't available, the username boolean value is false, and the text near the form states the username is available, else, just the opposite.
+				if(avail == "true"){
+					Username = false;
+					document.getElementById('uname').innerHTML = "Username unavailable";
+				}
+				else{
+					document.getElementById('uname').innerHTML = "Username available";
+					Username = true;
+				}
+			}
+			
+			CheckInfo();
+		}
+		
+		//Password hashed on client side, so at no point does the server know what the password actually is
+		function DoSubmit(){
+			document.info.password.value = CryptoJS.SHA256(document.info.password.value);
+			document.info.passwordconfirm.value = CryptoJS.SHA256(document.info.passwordconfirm.value);
+			document.info.answer.value = CryptoJS.SHA256(document.info.answer.value);
+		}
+		
+		function CheckPassword(){
+			if(document.info.password.value.length<=0){
+				Pass = false;
+				document.getElementById('pass').innerHTML = "Password fields can't be left blank";
+			}
+			else{
+				document.getElementById('pass').innerHTML = "";
+				if(document.info.password.value==document.info.passwordconfirm.value){
+					document.getElementById('pass').innerHTML = "Passwords match";
+					Pass=true;
+				}
+				else{
+					document.getElementById('pass').innerHTML = "Passwords don't match"
+					Pass=false;
+				}
+				
+			}
+			CheckInfo();
+			
+		}
+		
+		function CheckEmail(){
+			if(document.info.email.value.length<=0){
+				Email = false;
+				document.getElementById('mail').innerHTML = "Email fields can't be left blank";
+			}
+			else{
+				document.getElementById('mail').innerHTML = "";
+				var mail = document.info.email.value;
+				var avail = $.ajax({
+					url: "check_user.php?email=" + mail + "&username=f",
+					async: false,
+					type: 'get'
+				}).responseText;
+				
+				if(document.info.email.value==document.info.emailconfirm.value&&avail=="false"){
+					document.getElementById('mail').innerHTML = "Emails match";
+					Email=true;
+				}
+				else if(document.info.email.value==document.info.emailconfirm.value&&avail=="true"){
+					Email=false;
+					document.getElementById('mail').innerHTML = "Emails is unavailable.";
+				}
+				else{
+					document.getElementById('mail').innerHTML = "Emails don't match";
+					Email=false;
+				}
+			}
+			
+			CheckInfo();
+		}
+		
+		function CheckAnswer(){
+			if(document.info.answer.value.length<=0){
+				Answer = false;
+				document.getElementById('a').innerHTML = "This field can't be left blank";
+			}
+			else{
+				Answer = true;
+				document.getElementById('a').innerHTML = "";
+			}
+		}
+		function CheckQuestion(){
+			if(document.info.question.value.length<=0){
+				Question = false;
+				document.getElementById('q').innerHTML = "This field can't be left blank";
+			}
+			else{
+				Question = true;
+				document.getElementById('q').innerHTML = "";
+			}
+		}
+		
+		function CheckInfo(){
+			if(Username&&Pass&&Email&&Question&&Answer){
+				document.info.submit.disabled="";
+			}
+			else{
+				document.info.submit.disabled="disabled";
+			}
+		}
+	</script>
+	<form name="info" action="register.php" method="post" onsubmit="DoSubmit();">
+		
+		Username: <input type="text" name="Username" onblur="checkUser();" maxlength="20"><b id="uname">Username unavailable</b><br />
+		
+		Password: <input type="password" name="password" maxlength="20" onblur="CheckPassword();"><br />
+		
+		Confirm Password: <input type="password" name="passwordconfirm" onblur="CheckPassword();" maxlength="20"><b id="pass">Passwords don't match</b><br />
+		
+		Security Question: <input type="text" name="question" onblur="CheckQuestion();" maxlength="20"><b id="q"></b><br />
+		
+		Security Answer: <input type="password" name="answer" onblur="CheckAnswer();" maxlength="20"><b id="a"></b><br />
+		
+		Email: <input type="email" name="email" onblur="CheckEmail();" maxlength="20"> <br />
+		
+		Confirm Email: <input type="email" name="emailconfirm" onblur="CheckEmail();" maxlength="20"> <b id="mail">Emails don't match</b><br />
+				
+		<input type="submit" name="submit" value="submit" disabled="disabled"/>
+	</form>
+</body>
+</html>
+
